@@ -6,11 +6,28 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 import Image from "next/image";
 
 async function TrendingCoins() {
-  const trendingCoins = await fetcher<{ coins: TrendingCoin[] }>(
-    "search/trending",
-    undefined,
-    300,
-  );
+  let trendingCoins: { coins: TrendingCoin[] } | null = null;
+
+  try {
+    trendingCoins = await fetcher<{ coins: TrendingCoin[] }>(
+      "search/trending",
+      undefined,
+      300,
+    );
+  } catch (error) {
+    console.error("Failed to fetch trending coins:", error);
+  }
+
+  if (!trendingCoins) {
+    return (
+      <div id="trending-coins">
+        <h4>Trending Coins</h4>
+        <div className="flex items-center justify-center py-8 text-purple-100">
+          Failed to load trending coins
+        </div>
+      </div>
+    );
+  }
 
   const columns: DataTableColumn<TrendingCoin>[] = [
     {
@@ -64,16 +81,14 @@ async function TrendingCoins() {
   return (
     <div id="trending-coins">
       <h4>Trending Coin</h4>
-      <div id="trending-coins">
-        <DataTable
-          columns={columns}
-          data={trendingCoins.coins.slice(0, 6) || []}
-          rowKey={(coin) => coin.item.id}
-          tableClassName="trending-coins-table"
-          headerCellClassName="py-3!"
-          bodyCellClassName="py-2!"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={trendingCoins.coins.slice(0, 6) || []}
+        rowKey={(coin) => coin.item.id}
+        tableClassName="trending-coins-table"
+        headerCellClassName="py-3!"
+        bodyCellClassName="py-2!"
+      />
     </div>
   );
 }
