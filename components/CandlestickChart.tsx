@@ -7,8 +7,7 @@ import {
   PERIOD_CONFIG,
 } from "@/constants";
 import { fetcher } from "@/lib/coingecko.actions";
-import { convertOHLCData } from "@/lib/utils";
-import { get } from "http";
+import { convertOHLCData, normalizeOHLCTimestamps } from "@/lib/utils";
 import {
   CandlestickSeries,
   createChart,
@@ -33,7 +32,10 @@ function CandlestickChart({
   const [ohlcData, setOhlcData] = useState<OHLCData[] | undefined>(data ?? []);
   const [isPending, startTransition] = useTransition();
 
-  const fetchOHLCData = async (selectedPeriod: Period) => {
+  // Track latest request to prevent race conditions when switching periods quickly
+  const latestRequestIdRef = useRef(0);
+
+  const fetchOHLCData = async (selectedPeriod: Period, requestId: number) => {
     try {
       const { days, interval } = PERIOD_CONFIG[selectedPeriod];
       const newData = await fetcher<OHLCData[]>(`coins/${coinId}/ohlc`, {
@@ -41,17 +43,25 @@ function CandlestickChart({
         days,
         precision: "full",
       });
-      setOhlcData(newData ?? []);
+      // Only update state if this is still the latest request
+      if (requestId === latestRequestIdRef.current) {
+        setOhlcData(newData ?? []);
+      }
     } catch (error) {
-      console.error("Failed to fetch OHLC data:", error);
+      // Only log error if this is still the latest request
+      if (requestId === latestRequestIdRef.current) {
+        console.error("Failed to fetch OHLC data:", error);
+      }
     }
   };
 
   const handlePeriodChange = async (newPeriod: Period) => {
     if (newPeriod === period) return;
     setPeriod(newPeriod);
+    // Increment request ID to invalidate any pending requests
+    const requestId = ++latestRequestIdRef.current;
     startTransition(async () => {
-      await fetchOHLCData(newPeriod);
+      await fetchOHLCData(newPeriod, requestId);
     });
   };
 
@@ -67,7 +77,7 @@ function CandlestickChart({
     });
     const series = chart.addSeries(CandlestickSeries, getCandlestickConfig());
 
-    series.setData(convertOHLCData(ohlcData || []));
+    series.setData(convertOHLCData(normalizeOHLCTimestamps(ohlcData || [])));
     chart.timeScale().fitContent();
 
     chartRef.current = chart;
@@ -90,17 +100,8 @@ function CandlestickChart({
   useEffect(() => {
     if (!candleSeriesRef.current) return;
 
-    const convertedToSeconds = ohlcData.map(
-      (item) =>
-        [
-          Math.floor(item[0] / 1000),
-          item[1],
-          item[2],
-          item[3],
-          item[4],
-        ] as OHLCData,
-    );
-    const converted = convertOHLCData(convertedToSeconds);
+    const normalized = normalizeOHLCTimestamps(ohlcData || []);
+    const converted = convertOHLCData(normalized);
     candleSeriesRef.current.setData(converted);
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();

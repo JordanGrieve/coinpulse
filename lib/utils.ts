@@ -69,13 +69,29 @@ export function timeAgo(date: string | number | Date): string {
   return past.toISOString().split("T")[0];
 }
 
+export function normalizeOHLCTimestamps(data: OHLCData[]): OHLCData[] {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+  return data.map(
+    (item) =>
+      [
+        Math.floor(item[0] / 1000),
+        item[1],
+        item[2],
+        item[3],
+        item[4],
+      ] as OHLCData,
+  );
+}
+
 export function convertOHLCData(data: OHLCData[]) {
   if (!Array.isArray(data)) {
     return [];
   }
   return data
     .map((d) => ({
-      time: d[0] as Time, // ensure seconds, not ms
+      time: d[0] as Time, // expects seconds
       open: d[1],
       high: d[2],
       low: d[3],
