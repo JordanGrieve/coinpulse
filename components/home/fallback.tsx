@@ -23,6 +23,58 @@ export function CoinOverviewFallback() {
   );
 }
 
+export function CategoriesFallback() {
+  const columns: DataTableColumn<number>[] = [
+    {
+      header: "Category",
+      cellClassName: "category-cell",
+      cell: () => <Skeleton className="category-line" />,
+    },
+    {
+      header: "Top Gainers",
+      cellClassName: "top-gainers-cell",
+      cell: () => (
+        <div className="flex">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="top-gainer-image" />
+          ))}
+        </div>
+      ),
+    },
+    {
+      header: "24h Change",
+      cellClassName: "change-header-cell",
+      cell: () => (
+        <div className="price-change">
+          <Skeleton className="change-line" />
+        </div>
+      ),
+    },
+    {
+      header: "Market Cap",
+      cellClassName: "market-cap-cell",
+      cell: () => <Skeleton className="market-cap-line" />,
+    },
+    {
+      header: "24h Volume",
+      cellClassName: "volume-cell",
+      cell: () => <Skeleton className="volume-line" />,
+    },
+  ];
+
+  return (
+    <div id="categories-fallback" className="custom-scrollbar">
+      <h4>Top Categories</h4>
+      <DataTable
+        columns={columns}
+        data={Array.from({ length: 10 }, (_, i) => i)}
+        rowKey={(_, index) => index}
+        tableClassName="mt-3"
+      />
+    </div>
+  );
+}
+
 export function TrendingCoinsFallback() {
   const columns: DataTableColumn<number>[] = [
     {
