@@ -2,10 +2,31 @@ import { fetcher } from "@/lib/coingecko.actions";
 import DataTable from "../DataTable";
 import Image from "next/image";
 import { cn, formatCurrency } from "@/lib/utils";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { AlertCircle, TrendingDown, TrendingUp } from "lucide-react";
 
 const Categories = async () => {
-  const categories = await fetcher<Category[]>("coins/categories");
+  let categories: Category[] | null = null;
+  let error: string | null = null;
+
+  try {
+    categories = await fetcher<Category[]>("coins/categories");
+  } catch (err) {
+    console.error("Failed to fetch categories:", err);
+    error = err instanceof Error ? err.message : "Failed to load categories";
+  }
+
+  if (error || !categories) {
+    return (
+      <div id="categories" className="custom-scrollbar">
+        <h4>Top Categories</h4>
+        <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+          <AlertCircle className="w-10 h-10 mb-2" />
+          <p>Unable to load categories</p>
+          <p className="text-sm">{error || "Please try again later"}</p>
+        </div>
+      </div>
+    );
+  }
 
   const columns: DataTableColumn<Category>[] = [
     {
