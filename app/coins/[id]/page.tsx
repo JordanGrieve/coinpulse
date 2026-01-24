@@ -9,16 +9,9 @@ import LiveDataWrapper from "@/components/LiveDataWrapper";
 const Page = async ({ params }: NextPageProps) => {
   const { id } = await params;
 
-  const [coinData, coinOHLCData] = await Promise.all([
-    fetcher<CoinDetailsData>(`/coins/${id}`, {
-      dex_pair_format: "contract_address",
-    }),
-    fetcher<OHLCData>(`/coins/${id}/ohlc`, {
-      vs_currency: "usd",
-      days: 1,
-      precision: "full",
-    }),
-  ]);
+  const coinData = await fetcher<CoinDetailsData>(`/coins/${id}`, {
+    dex_pair_format: "contract_address",
+  });
 
   const platform = coinData.asset_platform_id
     ? coinData.detail_platforms?.[coinData.asset_platform_id]
@@ -64,9 +57,7 @@ const Page = async ({ params }: NextPageProps) => {
   return (
     <main id="coin-details-page">
       <section className="primary">
-        <LiveDataWrapper params={{ id }}>
-          <h4>Exchange Listings</h4>
-        </LiveDataWrapper>
+        <LiveDataWrapper params={{ id }} />
       </section>
 
       <section className="secondary">
